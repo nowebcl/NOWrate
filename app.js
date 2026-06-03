@@ -135,9 +135,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
         `;
 
+        const nameInput = item.querySelector('.sub-name-input');
         const priceInput = item.querySelector('.sub-price-input');
         const dateInput = item.querySelector('.sub-date-input');
         const btnDelete = item.querySelector('.btn-delete-sub');
+
+        nameInput.addEventListener('input', () => {
+            saveState();
+        });
 
         priceInput.addEventListener('focus', (e) => {
             const raw = e.target.value.replace(/[,.]/g, '');
@@ -177,6 +182,95 @@ document.addEventListener('DOMContentLoaded', () => {
         subs.forEach(sub => {
             addSubscriptionItem(sub.name, sub.price, sub.date || '');
         });
+    }
+
+    // LocalStorage Caching Mechanics
+    const CACHE_KEY = 'nowrate_calculator_state';
+
+    function saveState() {
+        const state = {
+            currency: currencySelect.value,
+            netSalary: netSalaryInput.value,
+            expRent: expRentInput.value,
+            expUtilities: expUtilitiesInput.value,
+            expHardware: expHardwareInput.value,
+            expOthers: expOthersInput.value,
+            taxRate: taxSlider.value,
+            vacationWeeks: vacationSlider.value,
+            weeklyHours: hoursSlider.value,
+            billableRate: billableSlider.value,
+            subscriptions: []
+        };
+        
+        const subItems = subscriptionsContainer.querySelectorAll('.subscription-item');
+        subItems.forEach(item => {
+            state.subscriptions.push({
+                name: item.querySelector('.sub-name-input').value,
+                price: item.querySelector('.sub-price-input').value,
+                date: item.querySelector('.sub-date-input').value
+            });
+        });
+        
+        localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+        const stateStr = localStorage.getItem(CACHE_KEY);
+        if (!stateStr) return false;
+        
+        try {
+            const state = JSON.parse(stateStr);
+            
+            if (state.currency) {
+                currencySelect.value = state.currency;
+                currentCurrencySymbol = currencySymbols[state.currency] || '$';
+                currencyIndicators.forEach(indicator => {
+                    if (indicator) indicator.textContent = currentCurrencySymbol;
+                });
+                // Update dynamic indicators (since document.querySelectorAll('.currency-indicator-sm') requires DOM check)
+                setTimeout(() => {
+                    const miniIndicators = document.querySelectorAll('.currency-indicator-sm');
+                    miniIndicators.forEach(indicator => {
+                        if (indicator) indicator.textContent = currentCurrencySymbol;
+                    });
+                }, 0);
+            }
+            
+            if (state.netSalary !== undefined) netSalaryInput.value = state.netSalary;
+            if (state.expRent !== undefined) expRentInput.value = state.expRent;
+            if (state.expUtilities !== undefined) expUtilitiesInput.value = state.expUtilities;
+            if (state.expHardware !== undefined) expHardwareInput.value = state.expHardware;
+            if (state.expOthers !== undefined) expOthersInput.value = state.expOthers;
+            
+            if (state.taxRate !== undefined) {
+                taxSlider.value = state.taxRate;
+                updateSliderFill(taxSlider);
+            }
+            if (state.vacationWeeks !== undefined) {
+                vacationSlider.value = state.vacationWeeks;
+                updateSliderFill(vacationSlider);
+            }
+            if (state.weeklyHours !== undefined) {
+                hoursSlider.value = state.weeklyHours;
+                updateSliderFill(hoursSlider);
+            }
+            if (state.billableRate !== undefined) {
+                billableSlider.value = state.billableRate;
+                updateSliderFill(billableSlider);
+            }
+            
+            subscriptionsContainer.innerHTML = '';
+            if (state.subscriptions && Array.isArray(state.subscriptions)) {
+                state.subscriptions.forEach(sub => {
+                    addSubscriptionItem(sub.name, parseInputValue(sub.price), sub.date);
+                });
+            }
+            
+            return true;
+        } catch (e) {
+            console.error('Error al cargar el estado guardado: ', e);
+            return false;
+        }
     }
 
     // Update range slider color fill (Premium design element)
@@ -365,6 +459,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Segment 3 (Taxes)
         segmentTaxes.setAttribute('stroke-dasharray', `${taxesPct} 100`);
         segmentTaxes.setAttribute('stroke-dashoffset', `${-(netPct + expensesPct)}`);
+
+        // Save current configuration to cache
+        saveState();
     }
 
     /* ==========================================================================
@@ -595,9 +692,13 @@ ${subsDetailsStr}  * Pago de Arriendo: ${currentCurrencySymbol}${expRent.toLocal
     /* ==========================================================================
        Initial Load Core
        ========================================================================== */
-    // Rebuild default subscriptions list on start (defaults to CLP)
-    rebuildSubscriptions('CLP');
+    // Try to load cached calculator state first
+    const isStateLoaded = loadState();
+    if (!isStateLoaded) {
+        // Fallback default setup (empty subscriptions lists in CLP)
+        rebuildSubscriptions('CLP');
+    }
 
-    // Initial Calculation on setup
+    // Initial Calculation on setup (this will auto-save initial state)
     calculate();
 });
