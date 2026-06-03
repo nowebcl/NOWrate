@@ -443,6 +443,62 @@ body {
 
 .btn-text-action:active {
     transform: scale(0.95);
+}/* Subscriptions Table Headers */
+.subscriptions-table-header {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 0.5rem 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 0.5rem;
+}
+
+.col-name { flex-grow: 1; min-width: 0; }
+.col-date { width: 65px; text-align: center; flex-shrink: 0; }
+.col-price { width: 100px; text-align: right; flex-shrink: 0; }
+.col-spacer { width: 30px; flex-shrink: 0; }
+
+.sub-date-wrapper-xs {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 65px;
+    flex-shrink: 0;
+}
+
+.sub-date-input {
+    width: 100%;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    background-color: #FFFFFF;
+    text-align: center;
+    transition: all var(--transition-fast);
+    -moz-appearance: textfield;
+}
+
+.sub-date-input::-webkit-outer-spin-button,
+.sub-date-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.sub-date-input:hover {
+    border-color: var(--color-border-hover);
+}
+
+.sub-date-input:focus {
+    outline: none;
+    border-color: var(--color-accent-purple);
+    box-shadow: var(--shadow-focus);
 }
 
 .subscriptions-list {

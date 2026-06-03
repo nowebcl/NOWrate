@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subscriptionsContainer = document.getElementById('subscriptions-container');
     const btnAddSubscription = document.getElementById('btn-add-subscription');
     const subsSubtotalSum = document.getElementById('subs-subtotal-sum');
+    const subsTableHeader = document.getElementById('subs-table-header');
     
     const expRentInput = document.getElementById('input-exp-rent');
     const expUtilitiesInput = document.getElementById('input-exp-utilities');
@@ -112,13 +113,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ARS: []
     };
 
-    function addSubscriptionItem(name = '', price = 0) {
+    function addSubscriptionItem(name = '', price = 0, date = '') {
         const item = document.createElement('div');
         item.className = 'subscription-item';
         const formattedPrice = formatIntegerInput(price);
 
         item.innerHTML = `
             <input type="text" class="sub-name-input" placeholder="Ej. Figma" value="${name}" autocomplete="off">
+            <div class="sub-date-wrapper-xs">
+                <input type="number" class="sub-date-input" min="1" max="31" value="${date}" placeholder="Día" title="Día de pago mensual (1-31)" autocomplete="off">
+            </div>
             <div class="currency-input-wrapper-xs">
                 <span class="currency-indicator-xs">${currentCurrencySymbol}</span>
                 <input type="text" class="sub-price-input" value="${formattedPrice}" placeholder="0" autocomplete="off">
@@ -132,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         const priceInput = item.querySelector('.sub-price-input');
+        const dateInput = item.querySelector('.sub-date-input');
         const btnDelete = item.querySelector('.btn-delete-sub');
 
         priceInput.addEventListener('focus', (e) => {
@@ -151,6 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
             calculate();
         });
 
+        dateInput.addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            if (val > 31) e.target.value = 31;
+            if (val < 1) e.target.value = '';
+            calculate();
+        });
+
         btnDelete.addEventListener('click', () => {
             item.remove();
             calculate();
@@ -163,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
         subscriptionsContainer.innerHTML = '';
         const subs = defaultSubscriptions[currency] || defaultSubscriptions['CLP'] || [];
         subs.forEach(sub => {
-            addSubscriptionItem(sub.name, sub.price);
+            addSubscriptionItem(sub.name, sub.price, sub.date || '');
         });
     }
 
@@ -236,6 +248,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Gather values from DOM
         const netMonthly = parseInputValue(netSalaryInput.value);
         
+        // Show/hide subscriptions table header
+        const subItems = subscriptionsContainer.querySelectorAll('.subscription-item');
+        if (subItems.length > 0) {
+            subsTableHeader.style.display = 'flex';
+        } else {
+            subsTableHeader.style.display = 'none';
+        }
+
         // Sum of all dynamic subscriptions
         let expSubs = 0;
         const subPriceInputs = subscriptionsContainer.querySelectorAll('.sub-price-input');
@@ -391,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add subscription row action
     btnAddSubscription.addEventListener('click', () => {
-        addSubscriptionItem('', 0);
+        addSubscriptionItem('', 0, '');
         
         // Auto focus the name input of the newly added row
         const newItems = subscriptionsContainer.querySelectorAll('.subscription-item');
@@ -492,8 +512,10 @@ document.addEventListener('DOMContentLoaded', () => {
         subItems.forEach(item => {
             const name = item.querySelector('.sub-name-input').value || 'Sin nombre';
             const priceVal = parseInputValue(item.querySelector('.sub-price-input').value);
+            const dateVal = item.querySelector('.sub-date-input').value;
+            const dateStr = dateVal ? ` (Día ${dateVal})` : '';
             expSubs += priceVal;
-            subsDetailsStr += `    * ${name}: ${currentCurrencySymbol}${priceVal.toLocaleString(locale)}\n`;
+            subsDetailsStr += `    * ${name}${dateStr}: ${currentCurrencySymbol}${priceVal.toLocaleString(locale)}\n`;
         });
         if (subItems.length === 0) {
             subsDetailsStr = '    * Ninguna suscripción activa\n';
